@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { readFile } from "fs/promises";
-import path from "path";
+import { supabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
 
 export async function GET(
   req: Request,
@@ -46,22 +45,18 @@ export async function GET(
     return NextResponse.redirect(product.downloadUrl);
   }
 
-  // ถ้าเป็นไฟล์ในเครื่อง อ่านจากโฟลเดอร์ uploads
-  try {
-    const filePath = path.join(process.cwd(), "uploads", product.downloadUrl);
-    const fileBuffer = await readFile(filePath);
-    const fileName = path.basename(product.downloadUrl);
+  // สร้าง signed URL จาก Supabase Storage (หมดอายุ 60 วินาที)
+  const { data, error } = await supabaseAdmin.storage
+    .from(STORAGE_BUCKETS.PROGRAMS)
+    .createSignedUrl(product.downloadUrl, 60);
 
-    return new NextResponse(fileBuffer, {
-      headers: {
-        "Content-Type": "application/octet-stream",
-        "Content-Disposition": `attachment; filename="${fileName}"`,
-      },
-    });
-  } catch {
+  if (error || !data?.signedUrl) {
+    console.error("Supabase signed URL error:", error);
     return NextResponse.json(
       { error: "หาไฟล์ไม่เจอ ติดต่อแอดมินนะ" },
       { status: 404 }
     );
   }
+
+  return NextResponse.redirect(data.signedUrl);
 }

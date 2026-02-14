@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { supabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -36,10 +35,25 @@ export async function POST(req: Request) {
   const ext = file.name.split(".").pop() || "jpg";
   const fileName = `${timestamp}-${session.user.id}-slip.${ext}`;
 
-  const dir = path.join(process.cwd(), "public", "uploads", "slips");
-  await mkdir(dir, { recursive: true });
+  const { error } = await supabaseAdmin.storage
+    .from(STORAGE_BUCKETS.SLIPS)
+    .upload(fileName, buffer, {
+      contentType: file.type,
+      upsert: false,
+    });
 
-  await writeFile(path.join(dir, fileName), buffer);
+  if (error) {
+    console.error("Supabase upload error:", error);
+    return NextResponse.json(
+      { error: "อัปโหลดไม่สำเร็จ ลองใหม่อีกที" },
+      { status: 500 }
+    );
+  }
 
-  return NextResponse.json({ fileName: `/uploads/slips/${fileName}` });
+  // สร้าง public URL
+  const { data: urlData } = supabaseAdmin.storage
+    .from(STORAGE_BUCKETS.SLIPS)
+    .getPublicUrl(fileName);
+
+  return NextResponse.json({ fileName: urlData.publicUrl });
 }

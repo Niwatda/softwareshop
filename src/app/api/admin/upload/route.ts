@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { supabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -39,18 +38,40 @@ export async function POST(req: Request) {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const fileName = `${timestamp}-${safeName}`;
 
-  // รูปเก็บใน public/uploads/images, ไฟล์โปรแกรมเก็บใน uploads/
-  const subDir = isImage ? path.join(process.cwd(), "public", "uploads", "images") : path.join(process.cwd(), "uploads");
-  await mkdir(subDir, { recursive: true });
+  // เลือก bucket ตามประเภทไฟล์
+  const bucket = isImage ? STORAGE_BUCKETS.IMAGES : STORAGE_BUCKETS.PROGRAMS;
 
-  const filePath = path.join(subDir, fileName);
-  await writeFile(filePath, buffer);
+  const { error } = await supabaseAdmin.storage
+    .from(bucket)
+    .upload(fileName, buffer, {
+      contentType: file.type,
+      upsert: false,
+    });
 
-  // รูปคืน path ที่เข้าถึงได้จาก browser
-  const publicPath = isImage ? `/uploads/images/${fileName}` : fileName;
+  if (error) {
+    console.error("Supabase upload error:", error);
+    return NextResponse.json(
+      { error: "อัปโหลดไม่สำเร็จ ลองใหม่อีกที" },
+      { status: 500 }
+    );
+  }
 
+  // สร้าง public URL สำหรับรูปภาพ
+  if (isImage) {
+    const { data: urlData } = supabaseAdmin.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+
+    return NextResponse.json({
+      fileName: urlData.publicUrl,
+      isImage,
+      message: "อัปโหลดเรียบร้อย!",
+    });
+  }
+
+  // สำหรับไฟล์โปรแกรม คืนชื่อไฟล์ (จะดาวน์โหลดผ่าน signed URL)
   return NextResponse.json({
-    fileName: publicPath,
+    fileName,
     isImage,
     message: "อัปโหลดเรียบร้อย!",
   });
