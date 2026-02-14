@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request, { params }: { params: { slug: string } }) {
   const product = await db.product.findUnique({
     where: { slug: params.slug, isActive: true },

@@ -8,6 +8,8 @@ import { FAQ } from "@/components/landing/faq";
 import { CTA } from "@/components/landing/cta";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 async function getSiteSettings() {
   const settings = await db.siteSetting.findMany();
   const result: Record<string, unknown> = {};
