@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
+import { getSupabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -41,7 +41,9 @@ export async function POST(req: Request) {
   // เลือก bucket ตามประเภทไฟล์
   const bucket = isImage ? STORAGE_BUCKETS.IMAGES : STORAGE_BUCKETS.PROGRAMS;
 
-  const { error } = await supabaseAdmin.storage
+  const supabase = getSupabaseAdmin();
+
+  const { error } = await supabase.storage
     .from(bucket)
     .upload(fileName, buffer, {
       contentType: file.type,
@@ -58,7 +60,7 @@ export async function POST(req: Request) {
 
   // สร้าง public URL สำหรับรูปภาพ
   if (isImage) {
-    const { data: urlData } = supabaseAdmin.storage
+    const { data: urlData } = supabase.storage
       .from(bucket)
       .getPublicUrl(fileName);
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { supabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
+import { getSupabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
 
 export async function GET(
   req: Request,
@@ -46,7 +46,8 @@ export async function GET(
   }
 
   // สร้าง signed URL จาก Supabase Storage (หมดอายุ 60 วินาที)
-  const { data, error } = await supabaseAdmin.storage
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.storage
     .from(STORAGE_BUCKETS.PROGRAMS)
     .createSignedUrl(product.downloadUrl, 60);
 

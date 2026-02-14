@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
+import { getSupabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -35,7 +35,9 @@ export async function POST(req: Request) {
   const ext = file.name.split(".").pop() || "jpg";
   const fileName = `${timestamp}-${session.user.id}-slip.${ext}`;
 
-  const { error } = await supabaseAdmin.storage
+  const supabase = getSupabaseAdmin();
+
+  const { error } = await supabase.storage
     .from(STORAGE_BUCKETS.SLIPS)
     .upload(fileName, buffer, {
       contentType: file.type,
@@ -51,7 +53,7 @@ export async function POST(req: Request) {
   }
 
   // สร้าง public URL
-  const { data: urlData } = supabaseAdmin.storage
+  const { data: urlData } = supabase.storage
     .from(STORAGE_BUCKETS.SLIPS)
     .getPublicUrl(fileName);
 
