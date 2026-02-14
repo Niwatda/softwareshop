@@ -17,6 +17,7 @@ interface Product {
   name: string;
   slug: string;
   description: string;
+  longDescription: string | null;
   features: string[];
   price: number;
   comparePrice: number | null;
@@ -33,6 +34,7 @@ const emptyForm = {
   name: "",
   slug: "",
   description: "",
+  longDescription: "",
   price: "",
   comparePrice: "",
   features: "",
@@ -85,6 +87,7 @@ export default function AdminProductsPage() {
       name: product.name,
       slug: product.slug,
       description: product.description,
+      longDescription: product.longDescription || "",
       price: String(product.price / 100),
       comparePrice: product.comparePrice ? String(product.comparePrice / 100) : "",
       features: product.features.join("\n"),
@@ -180,6 +183,7 @@ export default function AdminProductsPage() {
       name: form.name,
       slug: form.slug,
       description: form.description,
+      longDescription: form.longDescription || null,
       price: Math.round(parseFloat(form.price) * 100),
       comparePrice: form.comparePrice ? Math.round(parseFloat(form.comparePrice) * 100) : null,
       features: form.features.split("\n").filter(Boolean),
@@ -231,6 +235,7 @@ export default function AdminProductsPage() {
         name: product.name,
         slug: product.slug,
         description: product.description,
+        longDescription: product.longDescription,
         price: product.price,
         isActive: !product.isActive,
         features: product.features,
@@ -298,6 +303,19 @@ export default function AdminProductsPage() {
                   placeholder="เขียนรายละเอียดโปรแกรมให้ลูกค้าเข้าใจ"
                   required
                 />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  รายละเอียดเพิ่มเติม (แสดงในหน้าข้อมูลโปรแกรม)
+                </label>
+                <textarea
+                  className={textareaClass}
+                  rows={6}
+                  value={form.longDescription}
+                  onChange={(e) => setForm({ ...form, longDescription: e.target.value })}
+                  placeholder={"เขียนรายละเอียดแบบเต็ม เช่น วิธีการใช้งาน, ความต้องการของระบบ, ข้อดี ฯลฯ\nจะแสดงในหน้ารายละเอียดโปรแกรมแบบเต็ม"}
+                />
+                <p className="mt-1 text-xs text-gray-400">ข้อมูลนี้จะแสดงในหน้า /products/ชื่อ-slug เท่านั้น</p>
               </div>
               <Input
                 label="ราคา (บาท)"

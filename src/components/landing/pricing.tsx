@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, Loader2, PackageX, Play } from "lucide-react";
+import { Check, Loader2, PackageX, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 
 interface Product {
@@ -26,20 +27,12 @@ function formatPriceDisplay(priceInCents: number): string {
   return new Intl.NumberFormat("th-TH").format(priceInCents / 100);
 }
 
-function getYoutubeId(url: string): string | null {
-  const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-  );
-  return match ? match[1] : null;
-}
-
 export function Pricing() {
   const { data: session } = useSession();
   const router = useRouter();
   const loading = null;
   const [products, setProducts] = useState<Product[]>([]);
   const [fetching, setFetching] = useState(true);
-  const [activeVideo, setActiveVideo] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/products")
@@ -103,8 +96,7 @@ export function Pricing() {
           >
             {products.map((product, index) => {
               const isPopular = products.length > 1 && index === popularIndex;
-              const youtubeId = product.youtubeUrl ? getYoutubeId(product.youtubeUrl) : null;
-              const hasMedia = (product.images && product.images.length > 0) || youtubeId;
+              const hasImage = product.images && product.images.length > 0;
 
               return (
                 <motion.div
@@ -128,46 +120,14 @@ export function Pricing() {
                     </div>
                   )}
 
-                  {/* รูปหรือวิดีโอ */}
-                  {hasMedia && (
+                  {/* แสดงรูปภาพอย่างเดียว (ไม่มีวิดีโอ) */}
+                  {hasImage && (
                     <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800">
-                      {activeVideo === product.id && youtubeId ? (
-                        <iframe
-                          width="100%"
-                          height="100%"
-                          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="absolute inset-0"
-                        />
-                      ) : (
-                        <>
-                          {product.images?.[0] ? (
-                            <img
-                              src={product.images[0]}
-                              alt={product.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : youtubeId ? (
-                            <img
-                              src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`}
-                              alt={product.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : null}
-
-                          {youtubeId && (
-                            <button
-                              onClick={() => setActiveVideo(product.id)}
-                              className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/30"
-                            >
-                              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-transform hover:scale-110">
-                                <Play size={24} className="ml-1" />
-                              </div>
-                            </button>
-                          )}
-                        </>
-                      )}
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                   )}
 
@@ -205,7 +165,7 @@ export function Pricing() {
                       </ul>
                     )}
 
-                    <div className="mt-auto pt-8">
+                    <div className="mt-auto pt-8 space-y-3">
                       <Button
                         className={cn(
                           "w-full",
@@ -218,6 +178,19 @@ export function Pricing() {
                       >
                         ซื้อเลย
                       </Button>
+
+                      {/* ปุ่มรายละเอียดเพิ่มเติม - เด่นชัด มีกรอบ */}
+                      <Link href={`/products/${product.slug}`} className="block">
+                        <div className="rounded-xl border-2 border-dashed border-violet-300 bg-violet-50 p-3 text-center transition-all hover:border-violet-500 hover:bg-violet-100 dark:border-violet-700 dark:bg-violet-950/30 dark:hover:border-violet-500 dark:hover:bg-violet-950/50">
+                          <div className="flex items-center justify-center gap-2 font-semibold text-violet-700 dark:text-violet-400">
+                            <Info size={16} />
+                            <span>ดูรายละเอียดเพิ่มเติม</span>
+                          </div>
+                          <p className="mt-0.5 text-xs text-violet-500 dark:text-violet-500">
+                            ดูวิดีโอตัวอย่าง รูปภาพ และข้อมูลทั้งหมด
+                          </p>
+                        </div>
+                      </Link>
                     </div>
                   </div>
                 </motion.div>

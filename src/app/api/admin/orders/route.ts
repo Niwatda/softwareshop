@@ -41,3 +41,25 @@ export async function PATCH(req: Request) {
 
   return NextResponse.json({ order });
 }
+
+export async function DELETE(req: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const orderId = searchParams.get("id");
+
+  if (!orderId) {
+    return NextResponse.json({ error: "Missing order ID" }, { status: 400 });
+  }
+
+  try {
+    await db.order.delete({ where: { id: orderId } });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "ไม่สามารถลบคำสั่งซื้อได้" }, { status: 500 });
+  }
+}

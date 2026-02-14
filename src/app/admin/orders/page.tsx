@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatPrice, formatDate } from "@/lib/utils";
-import { CheckCircle, XCircle, X } from "lucide-react";
+import { CheckCircle, XCircle, X, Trash2 } from "lucide-react";
 
 interface Order {
   id: string;
@@ -23,6 +23,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [viewSlip, setViewSlip] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/orders")
@@ -57,6 +58,22 @@ export default function AdminOrdersPage() {
       alert("เกิดข้อผิดพลาด");
     }
     setUpdating(null);
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm("ต้องการลบคำสั่งซื้อนี้หรือไม่?")) return;
+    setDeleting(orderId);
+    try {
+      const res = await fetch(`/api/admin/orders?id=${orderId}`, { method: "DELETE" });
+      if (res.ok) {
+        setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      } else {
+        alert("ลบไม่สำเร็จ");
+      }
+    } catch {
+      alert("เกิดข้อผิดพลาด");
+    }
+    setDeleting(null);
   };
 
   return (
@@ -111,27 +128,38 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="px-6 py-4 text-gray-500">{formatDate(order.createdAt)}</td>
                       <td className="px-6 py-4">
-                        {order.status === "PENDING" && (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              className="gap-1 bg-green-600 hover:bg-green-700"
-                              disabled={updating === order.id}
-                              onClick={() => handleUpdateStatus(order.id, "COMPLETED")}
-                            >
-                              <CheckCircle size={14} /> อนุมัติ
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="gap-1"
-                              disabled={updating === order.id}
-                              onClick={() => handleUpdateStatus(order.id, "FAILED")}
-                            >
-                              <XCircle size={14} /> ปฏิเสธ
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex gap-2">
+                          {order.status === "PENDING" && (
+                            <>
+                              <Button
+                                size="sm"
+                                className="gap-1 bg-green-600 hover:bg-green-700"
+                                disabled={updating === order.id}
+                                onClick={() => handleUpdateStatus(order.id, "COMPLETED")}
+                              >
+                                <CheckCircle size={14} /> อนุมัติ
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="gap-1"
+                                disabled={updating === order.id}
+                                onClick={() => handleUpdateStatus(order.id, "FAILED")}
+                              >
+                                <XCircle size={14} /> ปฏิเสธ
+                              </Button>
+                            </>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
+                            disabled={deleting === order.id}
+                            onClick={() => handleDeleteOrder(order.id)}
+                          >
+                            <Trash2 size={14} /> ลบ
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

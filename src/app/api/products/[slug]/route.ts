@@ -9,7 +9,15 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
       name: true,
       slug: true,
       description: true,
+      longDescription: true,
+      features: true,
       price: true,
+      comparePrice: true,
+      image: true,
+      images: true,
+      youtubeUrl: true,
+      version: true,
+      updatedAt: true,
     },
   });
 

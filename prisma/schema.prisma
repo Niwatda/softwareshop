@@ -75,8 +75,9 @@ model Product {
   id           String   @id @default(cuid())
   name         String
   slug         String   @unique
-  description  String   @db.Text
-  features     String[] @default([])
+  description     String   @db.Text
+  longDescription String?  @db.Text
+  features        String[] @default([])
   price        Int
   comparePrice Int?
   image        String?

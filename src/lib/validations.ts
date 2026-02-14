@@ -22,6 +22,7 @@ export const productSchema = z.object({
   name: z.string().min(1, "ใส่ชื่อโปรแกรมด้วย"),
   slug: z.string().min(1, "ใส่ slug ด้วย"),
   description: z.string().min(1, "ใส่คำอธิบายด้วยนะ"),
+  longDescription: z.string().nullable().optional(),
   price: z.number().min(0, "ราคาต้องมากกว่า 0"),
   comparePrice: z.number().nullable().optional(),
   features: z.array(z.string()).optional(),
