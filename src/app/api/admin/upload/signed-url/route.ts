@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { fileName, contentType, bucket } = body;
+  const { fileName, bucket } = body;
 
   if (!fileName) {
     return NextResponse.json({ error: "ต้องระบุชื่อไฟล์" }, { status: 400 });
