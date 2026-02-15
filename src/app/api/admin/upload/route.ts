@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
+// POST - อัพโหลดไฟล์เล็ก (รูปภาพ < 5MB) ผ่าน server
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
 
   const formData = await req.formData();
   const file = formData.get("file") as File;
-  const type = formData.get("type") as string | null; // "image" or "program"
+  const type = formData.get("type") as string | null;
 
   if (!file) {
     return NextResponse.json({ error: "ไม่มีไฟล์นะ" }, { status: 400 });
@@ -24,11 +25,14 @@ export async function POST(req: Request) {
 
   const isImage = type === "image" || ALLOWED_IMAGE_TYPES.includes(file.type);
 
-  // จำกัดขนาดรูป 5MB, ไฟล์โปรแกรม 500MB
-  const maxSize = isImage ? 5 * 1024 * 1024 : 500 * 1024 * 1024;
-  if (file.size > maxSize) {
+  // จำกัดขนาดรูป 5MB (ไฟล์โปรแกรมใช้ signed URL แทน)
+  if (isImage && file.size > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: "รูปใหญ่เกินไป (สูงสุด 5MB)" }, { status: 400 });
+  }
+
+  if (!isImage) {
     return NextResponse.json(
-      { error: isImage ? "รูปใหญ่เกินไป (สูงสุด 5MB)" : "ไฟล์ใหญ่เกินไป (สูงสุด 500MB)" },
+      { error: "ไฟล์โปรแกรมให้ใช้ signed upload แทน" },
       { status: 400 }
     );
   }
@@ -40,13 +44,10 @@ export async function POST(req: Request) {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const fileName = `${timestamp}-${safeName}`;
 
-  // เลือก bucket ตามประเภทไฟล์
-  const bucket = isImage ? STORAGE_BUCKETS.IMAGES : STORAGE_BUCKETS.PROGRAMS;
-
   const supabase = getSupabaseAdmin();
 
   const { error } = await supabase.storage
-    .from(bucket)
+    .from(STORAGE_BUCKETS.IMAGES)
     .upload(fileName, buffer, {
       contentType: file.type,
       upsert: false,
@@ -60,23 +61,13 @@ export async function POST(req: Request) {
     );
   }
 
-  // สร้าง public URL สำหรับรูปภาพ
-  if (isImage) {
-    const { data: urlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(fileName);
+  const { data: urlData } = supabase.storage
+    .from(STORAGE_BUCKETS.IMAGES)
+    .getPublicUrl(fileName);
 
-    return NextResponse.json({
-      fileName: urlData.publicUrl,
-      isImage,
-      message: "อัปโหลดเรียบร้อย!",
-    });
-  }
-
-  // สำหรับไฟล์โปรแกรม คืนชื่อไฟล์ (จะดาวน์โหลดผ่าน signed URL)
   return NextResponse.json({
-    fileName,
-    isImage,
+    fileName: urlData.publicUrl,
+    isImage: true,
     message: "อัปโหลดเรียบร้อย!",
   });
 }

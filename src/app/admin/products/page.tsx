@@ -108,31 +108,79 @@ export default function AdminProductsPage() {
     setError("");
   };
 
+  const [uploadProgress, setUploadProgress] = useState(0);
+
   const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("type", "program");
+    setUploadProgress(0);
 
     try {
-      const res = await fetch("/api/admin/upload", {
+      // ขอ signed URL + token จาก server
+      const signedRes = await fetch("/api/admin/upload/signed-url", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type || "application/octet-stream",
+          bucket: "programs",
+        }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        setUploadedFileName(data.fileName);
-        setForm((f) => ({ ...f, downloadUrl: data.fileName }));
-      } else {
-        alert(data.error || "อัปโหลดไม่สำเร็จ");
+      const signedData = await signedRes.json();
+      if (!signedRes.ok) {
+        alert(signedData.error || "สร้าง upload URL ไม่สำเร็จ");
+        return;
       }
-    } catch {
+
+      // ใช้ TUS resumable upload สำหรับไฟล์ใหญ่ (รองรับถึง 5GB)
+      const { Upload } = await import("tus-js-client");
+
+      const supabaseUrl = signedData.supabaseUrl;
+
+      await new Promise<void>((resolve, reject) => {
+        const upload = new Upload(file, {
+          endpoint: `${supabaseUrl}/storage/v1/upload/resumable`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          headers: {
+            authorization: `Bearer ${signedData.token}`,
+            "x-upsert": "false",
+          },
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: "programs",
+            objectName: signedData.path,
+            contentType: file.type || "application/octet-stream",
+            cacheControl: "3600",
+          },
+          chunkSize: 6 * 1024 * 1024, // 6MB chunks
+          onError: (error) => {
+            console.error("TUS upload error:", error);
+            reject(error);
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percent = Math.round((bytesUploaded / bytesTotal) * 100);
+            setUploadProgress(percent);
+          },
+          onSuccess: () => {
+            resolve();
+          },
+        });
+        upload.start();
+      });
+
+      // เก็บ path สำหรับ download
+      setUploadedFileName(file.name);
+      setForm((f) => ({ ...f, downloadUrl: signedData.path }));
+
+    } catch (err) {
+      console.error("Upload error:", err);
       alert("อัปโหลดไม่สำเร็จ ลองใหม่นะ");
     } finally {
       setUploading(false);
+      setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -473,16 +521,24 @@ export default function AdminProductsPage() {
                     isLoading={uploading}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Upload size={16} /> เลือกไฟล์
+                    <Upload size={16} /> {uploading ? `กำลังอัปโหลด ${uploadProgress}%` : "เลือกไฟล์"}
                   </Button>
-                  {uploadedFileName && (
+                  {uploadedFileName && !uploading && (
                     <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
                       <FileCheck size={16} /> {uploadedFileName.split("/").pop()}
                     </span>
                   )}
                 </div>
+                {uploading && uploadProgress > 0 && (
+                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                    <div
+                      className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                )}
                 <p className="mt-1 text-xs text-gray-400">
-                  รองรับ .zip .rar .exe .msi .dmg .pkg .tar.gz .7z
+                  รองรับ .zip .rar .exe .msi .dmg .pkg .tar.gz .7z (ไม่จำกัดขนาด)
                 </p>
               </div>
 

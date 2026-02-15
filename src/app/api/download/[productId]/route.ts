@@ -47,11 +47,15 @@ export async function GET(
     return NextResponse.redirect(product.downloadUrl);
   }
 
-  // สร้าง signed URL จาก Supabase Storage (หมดอายุ 60 วินาที)
+  // สร้าง signed URL จาก Supabase Storage (หมดอายุ 5 นาที)
   const supabase = getSupabaseAdmin();
+  // downloadUrl เก็บเป็น path ภายใน bucket "programs" (เช่น "1234-filename.zip")
+  const filePath = product.downloadUrl.startsWith("programs/")
+    ? product.downloadUrl.replace("programs/", "")
+    : product.downloadUrl;
   const { data, error } = await supabase.storage
     .from(STORAGE_BUCKETS.PROGRAMS)
-    .createSignedUrl(product.downloadUrl, 60);
+    .createSignedUrl(filePath, 300);
 
   if (error || !data?.signedUrl) {
     console.error("Supabase signed URL error:", error);
