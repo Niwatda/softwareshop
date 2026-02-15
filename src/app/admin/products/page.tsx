@@ -116,9 +116,10 @@ export default function AdminProductsPage() {
 
     setUploading(true);
     setUploadProgress(0);
+    setError("");
 
     try {
-      // ขอ signed URL + token จาก server
+      // 1. ขอข้อมูล upload จาก server (admin-only)
       const signedRes = await fetch("/api/admin/upload/signed-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -130,35 +131,34 @@ export default function AdminProductsPage() {
       });
       const signedData = await signedRes.json();
       if (!signedRes.ok) {
+        setError(signedData.error || "สร้าง upload URL ไม่สำเร็จ");
         alert(signedData.error || "สร้าง upload URL ไม่สำเร็จ");
         return;
       }
 
-      // ใช้ TUS resumable upload สำหรับไฟล์ใหญ่ (รองรับถึง 5GB)
+      // 2. ใช้ TUS resumable upload ตรงไป Supabase Storage (รองรับถึง 5GB)
       const { Upload } = await import("tus-js-client");
-
-      const supabaseUrl = signedData.supabaseUrl;
 
       await new Promise<void>((resolve, reject) => {
         const upload = new Upload(file, {
-          endpoint: `${supabaseUrl}/storage/v1/upload/resumable`,
+          endpoint: `${signedData.supabaseUrl}/storage/v1/upload/resumable`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           headers: {
-            authorization: `Bearer ${signedData.token}`,
+            authorization: `Bearer ${signedData.uploadToken}`,
             "x-upsert": "false",
           },
           uploadDataDuringCreation: true,
           removeFingerprintOnSuccess: true,
           metadata: {
-            bucketName: "programs",
+            bucketName: signedData.bucket,
             objectName: signedData.path,
             contentType: file.type || "application/octet-stream",
             cacheControl: "3600",
           },
           chunkSize: 6 * 1024 * 1024, // 6MB chunks
-          onError: (error) => {
-            console.error("TUS upload error:", error);
-            reject(error);
+          onError: (err) => {
+            console.error("TUS upload error:", err);
+            reject(err);
           },
           onProgress: (bytesUploaded, bytesTotal) => {
             const percent = Math.round((bytesUploaded / bytesTotal) * 100);
@@ -168,16 +168,25 @@ export default function AdminProductsPage() {
             resolve();
           },
         });
-        upload.start();
+
+        // เริ่ม upload
+        upload.findPreviousUploads().then((previousUploads) => {
+          if (previousUploads.length) {
+            upload.resumeFromPreviousUpload(previousUploads[0]);
+          }
+          upload.start();
+        });
       });
 
-      // เก็บ path สำหรับ download
+      // 3. เก็บ path สำหรับ download
       setUploadedFileName(file.name);
       setForm((f) => ({ ...f, downloadUrl: signedData.path }));
 
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Upload error:", err);
-      alert("อัปโหลดไม่สำเร็จ ลองใหม่นะ");
+      const errMsg = err instanceof Error ? err.message : "Unknown error";
+      setError(`อัปโหลดไม่สำเร็จ: ${errMsg}`);
+      alert(`อัปโหลดไม่สำเร็จ: ${errMsg}`);
     } finally {
       setUploading(false);
       setUploadProgress(0);

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getSupabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
+import { STORAGE_BUCKETS } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-// POST - สร้าง signed URL สำหรับอัพโหลดไฟล์ใหญ่ตรงไป Supabase Storage
+// POST - สร้างข้อมูลสำหรับอัพโหลดไฟล์ใหญ่ตรงไป Supabase Storage ด้วย TUS
+// เฉพาะ Admin เท่านั้นที่เข้าถึงได้
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
@@ -27,36 +28,23 @@ export async function POST(req: Request) {
   // เลือก bucket
   const storageBucket = bucket === "images" ? STORAGE_BUCKETS.IMAGES : STORAGE_BUCKETS.PROGRAMS;
 
-  const supabase = getSupabaseAdmin();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  // สร้าง signed URL สำหรับ upload (หมดอายุ 10 นาที)
-  const { data, error } = await supabase.storage
-    .from(storageBucket)
-    .createSignedUploadUrl(storagePath);
-
-  if (error) {
-    console.error("Signed URL error:", error);
+  if (!supabaseUrl || !serviceRoleKey) {
     return NextResponse.json(
-      { error: "สร้าง upload URL ไม่สำเร็จ" },
+      { error: "Supabase ไม่ได้ตั้งค่า" },
       { status: 500 }
     );
   }
 
-  // สร้าง public URL สำหรับรูปภาพ
-  let publicUrl = null;
-  if (storageBucket === STORAGE_BUCKETS.IMAGES) {
-    const { data: urlData } = supabase.storage
-      .from(storageBucket)
-      .getPublicUrl(storagePath);
-    publicUrl = urlData.publicUrl;
-  }
-
   return NextResponse.json({
-    signedUrl: data.signedUrl,
-    token: data.token,
     path: storagePath,
-    publicUrl,
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    bucket: storageBucket,
+    supabaseUrl,
+    // ส่ง service role key ให้ admin client สำหรับ TUS upload
+    // ปลอดภัยเพราะ endpoint นี้ต้อง admin auth เท่านั้น
+    uploadToken: serviceRoleKey,
     message: "พร้อมอัพโหลด",
   });
 }
