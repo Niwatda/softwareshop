@@ -42,7 +42,7 @@ export function Navbar() {
               จุดเด่น
             </Link>
             <Link href="/#pricing" className={`text-sm ${scrolled ? "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" : "text-slate-300 hover:text-white"}`}>
-              ราคา
+              สินค้า
             </Link>
             <Link href="/#faq" className={`text-sm ${scrolled ? "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" : "text-slate-300 hover:text-white"}`}>
               คำถาม
@@ -112,7 +112,7 @@ export function Navbar() {
                 จุดเด่น
               </Link>
               <Link href="/#pricing" onClick={() => setIsOpen(false)} className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
-                ราคา
+                สินค้า
               </Link>
               <Link href="/#faq" onClick={() => setIsOpen(false)} className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
                 คำถาม
