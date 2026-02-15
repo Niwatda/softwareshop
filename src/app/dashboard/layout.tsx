@@ -38,7 +38,8 @@ export default function DashboardLayout({
   return (
     <>
       <Navbar />
-      <div className="flex min-h-screen pt-16">
+      <div className="flex min-h-screen flex-col pt-16 lg:flex-row">
+        {/* Sidebar - เดสก์ท็อป */}
         <aside className="hidden w-64 border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950 lg:block">
           <nav className="space-y-1 p-4">
             {sidebarLinks.map((link) => (
@@ -59,7 +60,26 @@ export default function DashboardLayout({
           </nav>
         </aside>
 
-        <main className="flex-1 p-6 lg:p-8">{children}</main>
+        {/* เมนูแถบบน - มือถือ */}
+        <div className="flex overflow-x-auto border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950 lg:hidden">
+          {sidebarLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "flex flex-shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-sm transition-colors",
+                pathname === link.href
+                  ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                  : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              )}
+            >
+              <link.icon size={16} />
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </>
   );

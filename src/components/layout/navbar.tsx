@@ -5,7 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Sun, Moon, LogOut, LayoutDashboard, Shield } from "lucide-react";
+import { Menu, X, Sun, Moon, LogOut, LayoutDashboard, Shield, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Navbar() {
@@ -120,11 +120,19 @@ export function Navbar() {
               <hr className="border-slate-200 dark:border-slate-700" />
               {session ? (
                 <>
-                  <Link href="/dashboard" onClick={() => setIsOpen(false)} className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
-                    หน้าหลัก
+                  {session.user.role === "ADMIN" && (
+                    <Link href="/admin" onClick={() => setIsOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-violet-600 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-slate-800">
+                      <Shield size={16} /> จัดการ (Admin)
+                    </Link>
+                  )}
+                  <Link href="/dashboard" onClick={() => setIsOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <LayoutDashboard size={16} /> หน้าหลัก
                   </Link>
-                  <button onClick={() => signOut()} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-slate-100 dark:hover:bg-slate-800">
-                    ออกจากระบบ
+                  <Link href="/dashboard/downloads" onClick={() => setIsOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <Download size={16} /> ดาวน์โหลด
+                  </Link>
+                  <button onClick={() => signOut()} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <LogOut size={16} /> ออกจากระบบ
                   </button>
                 </>
               ) : (
