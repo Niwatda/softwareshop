@@ -6,6 +6,11 @@ import { getSupabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
+interface ChunkedDownload {
+  chunks: string[];
+  originalName: string;
+}
+
 export async function GET(
   req: Request,
   { params }: { params: { productId: string } }
@@ -47,12 +52,53 @@ export async function GET(
     return NextResponse.redirect(product.downloadUrl);
   }
 
-  // สร้าง signed URL จาก Supabase Storage (หมดอายุ 5 นาที)
   const supabase = getSupabaseAdmin();
-  // downloadUrl เก็บเป็น path ภายใน bucket "programs" (เช่น "1234-filename.zip")
+
+  // ตรวจสอบว่าเป็น chunked download หรือไม่
+  let chunkedData: ChunkedDownload | null = null;
+  try {
+    const parsed = JSON.parse(product.downloadUrl);
+    if (parsed.chunks && Array.isArray(parsed.chunks)) {
+      chunkedData = parsed as ChunkedDownload;
+    }
+  } catch {
+    // ไม่ใช่ JSON = ไฟล์เดียว
+  }
+
+  if (chunkedData) {
+    // === Chunked download: สร้าง signed URLs สำหรับแต่ละ chunk ===
+    const signedUrls: string[] = [];
+    for (const chunk of chunkedData.chunks) {
+      const chunkPath = chunk.startsWith("programs/")
+        ? chunk.replace("programs/", "")
+        : chunk;
+      const { data, error } = await supabase.storage
+        .from(STORAGE_BUCKETS.PROGRAMS)
+        .createSignedUrl(chunkPath, 600); // 10 นาที
+
+      if (error || !data?.signedUrl) {
+        console.error("Chunk signed URL error:", error, "path:", chunkPath);
+        return NextResponse.json(
+          { error: "หาไฟล์บางส่วนไม่เจอ ติดต่อแอดมินนะ" },
+          { status: 404 }
+        );
+      }
+      signedUrls.push(data.signedUrl);
+    }
+
+    // ส่ง URLs กลับให้ client รวมไฟล์เอง
+    return NextResponse.json({
+      type: "chunked",
+      chunks: signedUrls,
+      originalName: chunkedData.originalName || `${product.name}.zip`,
+    });
+  }
+
+  // === Single file download ===
   const filePath = product.downloadUrl.startsWith("programs/")
     ? product.downloadUrl.replace("programs/", "")
     : product.downloadUrl;
+
   const { data, error } = await supabase.storage
     .from(STORAGE_BUCKETS.PROGRAMS)
     .createSignedUrl(filePath, 300);

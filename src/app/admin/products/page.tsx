@@ -109,6 +109,44 @@ export default function AdminProductsPage() {
   };
 
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState("");
+
+  const CHUNK_SIZE = 40 * 1024 * 1024; // 40MB per chunk (Supabase free tier limit 50MB)
+
+  // Upload chunk เดียวด้วย TUS
+  const uploadChunk = async (
+    blob: Blob,
+    chunkName: string,
+    uploadToken: string,
+    supabaseUrl: string,
+    bucket: string,
+  ) => {
+    const { Upload } = await import("tus-js-client");
+
+    return new Promise<void>((resolve, reject) => {
+      const upload = new Upload(blob, {
+        endpoint: `${supabaseUrl}/storage/v1/upload/resumable`,
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        headers: {
+          authorization: `Bearer ${uploadToken}`,
+          "x-upsert": "false",
+        },
+        uploadDataDuringCreation: true,
+        removeFingerprintOnSuccess: true,
+        metadata: {
+          bucketName: bucket,
+          objectName: chunkName,
+          contentType: "application/octet-stream",
+          cacheControl: "3600",
+        },
+        chunkSize: 6 * 1024 * 1024, // TUS internal chunk 6MB
+        onError: (err) => reject(err),
+        onProgress: () => {}, // progress tracked at file level
+        onSuccess: () => resolve(),
+      });
+      upload.start();
+    });
+  };
 
   const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -116,6 +154,7 @@ export default function AdminProductsPage() {
 
     setUploading(true);
     setUploadProgress(0);
+    setUploadStatus("กำลังเตรียม...");
     setError("");
 
     try {
@@ -125,71 +164,54 @@ export default function AdminProductsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fileName: file.name,
-          contentType: file.type || "application/octet-stream",
           bucket: "programs",
         }),
       });
       const signedData = await signedRes.json();
       if (!signedRes.ok) {
         setError(signedData.error || "สร้าง upload URL ไม่สำเร็จ");
-        alert(signedData.error || "สร้าง upload URL ไม่สำเร็จ");
         return;
       }
 
-      // 2. ใช้ TUS resumable upload ตรงไป Supabase Storage (รองรับถึง 5GB)
-      const { Upload } = await import("tus-js-client");
+      const { uploadToken, supabaseUrl, bucket, path: basePath } = signedData;
 
-      await new Promise<void>((resolve, reject) => {
-        const upload = new Upload(file, {
-          endpoint: `${signedData.supabaseUrl}/storage/v1/upload/resumable`,
-          retryDelays: [0, 3000, 5000, 10000, 20000],
-          headers: {
-            authorization: `Bearer ${signedData.uploadToken}`,
-            "x-upsert": "false",
-          },
-          uploadDataDuringCreation: true,
-          removeFingerprintOnSuccess: true,
-          metadata: {
-            bucketName: signedData.bucket,
-            objectName: signedData.path,
-            contentType: file.type || "application/octet-stream",
-            cacheControl: "3600",
-          },
-          chunkSize: 6 * 1024 * 1024, // 6MB chunks
-          onError: (err) => {
-            console.error("TUS upload error:", err);
-            reject(err);
-          },
-          onProgress: (bytesUploaded, bytesTotal) => {
-            const percent = Math.round((bytesUploaded / bytesTotal) * 100);
-            setUploadProgress(percent);
-          },
-          onSuccess: () => {
-            resolve();
-          },
-        });
+      // 2. ตัดไฟล์เป็น chunks (40MB ต่อชิ้น เพื่อไม่เกิน Supabase 50MB limit)
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      const chunkPaths: string[] = [];
 
-        // เริ่ม upload
-        upload.findPreviousUploads().then((previousUploads) => {
-          if (previousUploads.length) {
-            upload.resumeFromPreviousUpload(previousUploads[0]);
-          }
-          upload.start();
-        });
-      });
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const blob = file.slice(start, end);
+        const chunkName = totalChunks === 1
+          ? basePath
+          : `${basePath}.part${i}`;
 
-      // 3. เก็บ path สำหรับ download
+        setUploadStatus(`อัปโหลดชิ้นที่ ${i + 1}/${totalChunks} (${Math.round(end / 1024 / 1024)}MB)`);
+
+        await uploadChunk(blob, chunkName, uploadToken, supabaseUrl, bucket);
+
+        chunkPaths.push(chunkName);
+        setUploadProgress(Math.round(((i + 1) / totalChunks) * 100));
+      }
+
+      // 3. เก็บ paths สำหรับ download
+      //    - ถ้าชิ้นเดียว เก็บเป็น string เดียว
+      //    - ถ้าหลายชิ้น เก็บเป็น JSON array
+      const downloadValue = totalChunks === 1
+        ? chunkPaths[0]
+        : JSON.stringify({ chunks: chunkPaths, originalName: file.name });
+
       setUploadedFileName(file.name);
-      setForm((f) => ({ ...f, downloadUrl: signedData.path }));
+      setForm((f) => ({ ...f, downloadUrl: downloadValue }));
+      setUploadStatus("อัปโหลดสำเร็จ!");
 
     } catch (err: unknown) {
       console.error("Upload error:", err);
       const errMsg = err instanceof Error ? err.message : "Unknown error";
       setError(`อัปโหลดไม่สำเร็จ: ${errMsg}`);
-      alert(`อัปโหลดไม่สำเร็จ: ${errMsg}`);
     } finally {
       setUploading(false);
-      setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -529,25 +551,31 @@ export default function AdminProductsPage() {
                     className="gap-2"
                     isLoading={uploading}
                     onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
                   >
-                    <Upload size={16} /> {uploading ? `กำลังอัปโหลด ${uploadProgress}%` : "เลือกไฟล์"}
+                    <Upload size={16} /> {uploading ? `${uploadProgress}%` : "เลือกไฟล์"}
                   </Button>
                   {uploadedFileName && !uploading && (
                     <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
-                      <FileCheck size={16} /> {uploadedFileName.split("/").pop()}
+                      <FileCheck size={16} /> {uploadedFileName}
                     </span>
                   )}
                 </div>
-                {uploading && uploadProgress > 0 && (
-                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                    <div
-                      className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
+                {uploading && (
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                      <div
+                        className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                    {uploadStatus && (
+                      <p className="mt-1 text-xs text-indigo-600 dark:text-indigo-400">{uploadStatus}</p>
+                    )}
                   </div>
                 )}
                 <p className="mt-1 text-xs text-gray-400">
-                  รองรับ .zip .rar .exe .msi .dmg .pkg .tar.gz .7z (ไม่จำกัดขนาด)
+                  รองรับ .zip .rar .exe .msi .dmg .pkg .tar.gz .7z (ไฟล์ใหญ่จะถูกแบ่งอัปโหลดอัตโนมัติ)
                 </p>
               </div>
 

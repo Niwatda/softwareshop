@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Package } from "lucide-react";
+import { Download, Package, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 interface PurchasedProduct {
@@ -17,6 +17,8 @@ interface PurchasedProduct {
 export default function DownloadsPage() {
   const [products, setProducts] = useState<PurchasedProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState("");
 
   useEffect(() => {
     fetch("/api/user/downloads")
@@ -28,9 +30,56 @@ export default function DownloadsPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const handleDownload = (productId: string) => {
-    // ใช้ API route ที่เช็คสิทธิ์แล้ว
-    window.location.href = `/api/download/${productId}`;
+  const handleDownload = async (productId: string) => {
+    setDownloadingId(productId);
+    setDownloadProgress("กำลังเตรียมไฟล์...");
+
+    try {
+      const res = await fetch(`/api/download/${productId}`);
+
+      // ถ้า redirect (ไฟล์เดียว) - browser จะ follow redirect อัตโนมัติ
+      // แต่ถ้าเป็น JSON response (chunked) - ต้อง download แยก
+      const contentType = res.headers.get("content-type") || "";
+
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+
+        if (data.type === "chunked" && data.chunks) {
+          // ดาวน์โหลดแต่ละ chunk แล้วรวม
+          const blobParts: Blob[] = [];
+          for (let i = 0; i < data.chunks.length; i++) {
+            setDownloadProgress(`กำลังดาวน์โหลด ${i + 1}/${data.chunks.length}...`);
+            const chunkRes = await fetch(data.chunks[i]);
+            if (!chunkRes.ok) throw new Error(`ดาวน์โหลดชิ้นที่ ${i + 1} ไม่สำเร็จ`);
+            const blob = await chunkRes.blob();
+            blobParts.push(blob);
+          }
+
+          // รวมเป็นไฟล์เดียว
+          setDownloadProgress("กำลังรวมไฟล์...");
+          const fullBlob = new Blob(blobParts, { type: "application/octet-stream" });
+          const url = URL.createObjectURL(fullBlob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = data.originalName || "download.zip";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } else if (data.error) {
+          alert(data.error);
+        }
+      } else {
+        // ไฟล์เดียว - redirect ไปตรง ๆ
+        window.location.href = `/api/download/${productId}`;
+      }
+    } catch (err) {
+      console.error("Download error:", err);
+      alert("ดาวน์โหลดไม่สำเร็จ ลองใหม่นะ");
+    } finally {
+      setDownloadingId(null);
+      setDownloadProgress("");
+    }
   };
 
   return (
@@ -75,19 +124,29 @@ export default function DownloadsPage() {
                     </p>
                   </div>
                 </div>
-                {product.downloadUrl ? (
-                  <Button
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => handleDownload(product.id)}
-                  >
-                    <Download size={16} /> โหลดเลย
-                  </Button>
-                ) : (
-                  <Button size="sm" disabled>
-                    กำลังเตรียมไฟล์ให้
-                  </Button>
-                )}
+                <div className="flex flex-col items-end gap-1">
+                  {product.downloadUrl ? (
+                    <Button
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => handleDownload(product.id)}
+                      disabled={downloadingId === product.id}
+                    >
+                      {downloadingId === product.id ? (
+                        <><Loader2 size={16} className="animate-spin" /> กำลังโหลด...</>
+                      ) : (
+                        <><Download size={16} /> โหลดเลย</>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button size="sm" disabled>
+                      กำลังเตรียมไฟล์ให้
+                    </Button>
+                  )}
+                  {downloadingId === product.id && downloadProgress && (
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400">{downloadProgress}</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))
