@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { productSchema } from "@/lib/validations";
+import { getSupabaseAdmin, STORAGE_BUCKETS } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -125,7 +126,53 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
 
-  await db.product.delete({ where: { id } });
+  try {
+    // ดึงข้อมูลก่อนลบ เพื่อลบไฟล์ใน Storage ด้วย
+    const product = await db.product.findUnique({ where: { id } });
 
-  return NextResponse.json({ message: "Deleted" });
+    // ลบ orders ที่เกี่ยวข้องก่อน
+    await db.order.deleteMany({ where: { productId: id } });
+
+    // ลบ product
+    await db.product.delete({ where: { id } });
+
+    // ลบไฟล์ใน Supabase Storage (ถ้ามี)
+    if (product?.downloadUrl) {
+      try {
+        const supabase = getSupabaseAdmin();
+        let filesToDelete: string[] = [];
+
+        // ตรวจสอบว่าเป็น chunked หรือไม่
+        try {
+          const parsed = JSON.parse(product.downloadUrl);
+          if (parsed.chunks && Array.isArray(parsed.chunks)) {
+            filesToDelete = parsed.chunks;
+          }
+        } catch {
+          // ไม่ใช่ JSON = ไฟล์เดียว
+          if (!product.downloadUrl.startsWith("http")) {
+            filesToDelete = [product.downloadUrl];
+          }
+        }
+
+        if (filesToDelete.length > 0) {
+          const paths = filesToDelete.map((f) =>
+            f.startsWith("programs/") ? f.replace("programs/", "") : f
+          );
+          await supabase.storage.from(STORAGE_BUCKETS.PROGRAMS).remove(paths);
+        }
+      } catch (storageErr) {
+        console.error("Storage cleanup error (non-critical):", storageErr);
+      }
+    }
+
+    return NextResponse.json({ message: "ลบเรียบร้อย" });
+  } catch (err: unknown) {
+    console.error("Delete error:", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json(
+      { error: "ลบไม่สำเร็จ: " + message },
+      { status: 500 }
+    );
+  }
 }
