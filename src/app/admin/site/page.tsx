@@ -73,6 +73,17 @@ const defaultValues: Record<TabKey, unknown> = {
     brand: "SoftwareShop",
     description: "โปรแกรมดีๆ ราคาเบาๆ ใช้ง่าย ได้ผลจริง",
     email: "support@softwareshop.com",
+    col1Title: "โปรแกรม",
+    col1Link1: "จุดเด่น",
+    col1Link2: "ราคา",
+    col1Link3: "คำถามที่ถามบ่อย",
+    col2Title: "ช่วยเหลือ",
+    col2Link1: "หน้าหลักของฉัน",
+    col2Link2: "ติดต่อเรา",
+    col3Title: "ข้อกำหนด",
+    col3Link1: "นโยบายความเป็นส่วนตัว",
+    col3Link2: "เงื่อนไขการใช้งาน",
+    copyright: "สงวนลิขสิทธิ์",
   },
   pricing: {
     title: "ราคาเท่าไหร่?",
@@ -326,20 +337,56 @@ export default function AdminSitePage() {
   };
 
   const renderFooter = () => {
-    const d = currentData as { brand: string; description: string; email: string };
+    const d = currentData as Record<string, string>;
     return (
-      <div className="space-y-4">
-        <Input label="ชื่อแบรนด์" value={d.brand || ""} onChange={(e) => updateField("brand", e.target.value)} />
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">คำอธิบาย</label>
-          <textarea
-            className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-            rows={2}
-            value={d.description || ""}
-            onChange={(e) => updateField("description", e.target.value)}
-          />
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase">ข้อมูลหลัก</h3>
+          <Input label="ชื่อแบรนด์" value={d.brand || ""} onChange={(e) => updateField("brand", e.target.value)} />
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">คำอธิบาย</label>
+            <textarea
+              className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+              rows={2}
+              value={d.description || ""}
+              onChange={(e) => updateField("description", e.target.value)}
+            />
+          </div>
+          <Input label="อีเมลติดต่อ" value={d.email || ""} onChange={(e) => updateField("email", e.target.value)} />
         </div>
-        <Input label="อีเมลติดต่อ" value={d.email || ""} onChange={(e) => updateField("email", e.target.value)} />
+        <hr className="border-gray-200 dark:border-gray-700" />
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase">คอลัมน์ 1</h3>
+          <Input label="หัวข้อ" value={d.col1Title || ""} onChange={(e) => updateField("col1Title", e.target.value)} />
+          <div className="grid grid-cols-3 gap-3">
+            <Input label="ลิงก์ 1" value={d.col1Link1 || ""} onChange={(e) => updateField("col1Link1", e.target.value)} />
+            <Input label="ลิงก์ 2" value={d.col1Link2 || ""} onChange={(e) => updateField("col1Link2", e.target.value)} />
+            <Input label="ลิงก์ 3" value={d.col1Link3 || ""} onChange={(e) => updateField("col1Link3", e.target.value)} />
+          </div>
+        </div>
+        <hr className="border-gray-200 dark:border-gray-700" />
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase">คอลัมน์ 2</h3>
+          <Input label="หัวข้อ" value={d.col2Title || ""} onChange={(e) => updateField("col2Title", e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="ลิงก์ 1" value={d.col2Link1 || ""} onChange={(e) => updateField("col2Link1", e.target.value)} />
+            <Input label="ลิงก์ 2" value={d.col2Link2 || ""} onChange={(e) => updateField("col2Link2", e.target.value)} />
+          </div>
+        </div>
+        <hr className="border-gray-200 dark:border-gray-700" />
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase">คอลัมน์ 3</h3>
+          <Input label="หัวข้อ" value={d.col3Title || ""} onChange={(e) => updateField("col3Title", e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="ลิงก์ 1" value={d.col3Link1 || ""} onChange={(e) => updateField("col3Link1", e.target.value)} />
+            <Input label="ลิงก์ 2" value={d.col3Link2 || ""} onChange={(e) => updateField("col3Link2", e.target.value)} />
+          </div>
+        </div>
+        <hr className="border-gray-200 dark:border-gray-700" />
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase">ด้านล่างสุด</h3>
+          <Input label="ข้อความสงวนลิขสิทธิ์" value={d.copyright || ""} onChange={(e) => updateField("copyright", e.target.value)} />
+        </div>
       </div>
     );
   };
