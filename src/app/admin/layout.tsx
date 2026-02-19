@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
-import { LayoutDashboard, Package, PanelTop, ShoppingBag, Users, ExternalLink } from "lucide-react";
+import { LayoutDashboard, Package, PanelTop, ShoppingBag, Users, ExternalLink, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const adminLinks = [
@@ -14,6 +14,7 @@ const adminLinks = [
   { href: "/admin/orders", label: "คำสั่งซื้อ", icon: ShoppingBag },
   { href: "/admin/users", label: "สมาชิก", icon: Users },
   { href: "/admin/site", label: "จัดการหน้าเว็บ", icon: PanelTop },
+  { href: "/admin/pages", label: "สร้างหน้าใหม่", icon: FileText },
   { href: "/", label: "ดูหน้าเว็บ", icon: ExternalLink },
 ];
 

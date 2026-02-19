@@ -116,3 +116,14 @@ model SiteSetting {
   value     Json
   updatedAt DateTime @updatedAt
 }
+
+model Page {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  blocks      Json     @default("[]")
+  isPublished Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
