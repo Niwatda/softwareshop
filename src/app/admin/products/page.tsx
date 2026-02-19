@@ -362,14 +362,21 @@ export default function AdminProductsPage() {
               <Input
                 label="ชื่อโปรแกรม"
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    name,
+                    slug: f.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
+                  }));
+                }}
                 required
               />
               <Input
                 label="Slug (ภาษาอังกฤษ ไม่มีเว้นวรรค)"
                 value={form.slug}
-                onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                placeholder="เช่น my-program"
+                onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/(^-|-$)/g, "") })}
+                placeholder="สร้างอัตโนมัติจากชื่อ"
                 required
               />
               <div className="sm:col-span-2">

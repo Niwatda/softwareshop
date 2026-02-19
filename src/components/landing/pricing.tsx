@@ -27,7 +27,23 @@ function formatPriceDisplay(priceInCents: number): string {
   return new Intl.NumberFormat("th-TH").format(priceInCents / 100);
 }
 
-export function Pricing() {
+const defaults = {
+  title: "ราคาเท่าไหร่?",
+  description: "จ่ายครั้งเดียว ใช้ได้ตลอด ไม่มีค่ารายเดือน",
+  buttonText: "ซื้อเลย",
+  popularBadge: "ขายดีสุด!",
+  perUnit: "/ จ่ายครั้งเดียว",
+  detailText: "ดูรายละเอียดเพิ่มเติม",
+  detailSub: "ดูวิดีโอตัวอย่าง รูปภาพ และข้อมูลทั้งหมด",
+  emptyText: "ยังไม่มีโปรแกรมวางขาย เร็วๆ นี้นะ!",
+};
+
+interface PricingProps {
+  data?: Record<string, unknown>;
+}
+
+export function Pricing({ data }: PricingProps) {
+  const d = { ...defaults, ...data } as typeof defaults;
   const { data: session } = useSession();
   const router = useRouter();
   const loading = null;
@@ -37,7 +53,7 @@ export function Pricing() {
   useEffect(() => {
     fetch("/api/products")
       .then((r) => r.json())
-      .then((data) => setProducts(data.products || []))
+      .then((res) => setProducts(res.products || []))
       .catch(() => setProducts([]))
       .finally(() => setFetching(false));
   }, []);
@@ -69,10 +85,10 @@ export function Pricing() {
           className="text-center"
         >
           <h2 className="text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">
-            ราคาเท่าไหร่?
+            {d.title}
           </h2>
           <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-            จ่ายครั้งเดียว ใช้ได้ตลอด ไม่มีค่ารายเดือน
+            {d.description}
           </p>
         </motion.div>
 
@@ -83,7 +99,7 @@ export function Pricing() {
         ) : products.length === 0 ? (
           <div className="mt-16 flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400">
             <PackageX className="h-12 w-12" />
-            <p className="text-lg">ยังไม่มีโปรแกรมวางขาย เร็วๆ นี้นะ!</p>
+            <p className="text-lg">{d.emptyText}</p>
           </div>
         ) : (
           <div
@@ -115,7 +131,7 @@ export function Pricing() {
                   {isPopular && (
                     <div className="absolute right-4 top-4 z-10">
                       <span className="rounded-full bg-violet-600 px-3 py-1 text-xs font-medium text-white">
-                        ขายดีสุด!
+                        {d.popularBadge}
                       </span>
                     </div>
                   )}
@@ -148,7 +164,7 @@ export function Pricing() {
                       <span className="text-4xl font-bold text-slate-900 dark:text-white">
                         ฿{formatPriceDisplay(product.price)}
                       </span>
-                      <span className="text-slate-500 dark:text-slate-400"> / จ่ายครั้งเดียว</span>
+                      <span className="text-slate-500 dark:text-slate-400"> {d.perUnit}</span>
                     </div>
 
                     {product.features.length > 0 && (
@@ -176,7 +192,7 @@ export function Pricing() {
                         isLoading={loading === product.slug}
                         onClick={() => handlePurchase(product.slug)}
                       >
-                        ซื้อเลย
+                        {d.buttonText}
                       </Button>
 
                       {/* ปุ่มรายละเอียดเพิ่มเติม - เด่นชัด มีกรอบ */}
@@ -184,10 +200,10 @@ export function Pricing() {
                         <div className="rounded-xl border-2 border-dashed border-violet-300 bg-violet-50 p-3 text-center transition-all hover:border-violet-500 hover:bg-violet-100 dark:border-violet-700 dark:bg-violet-950/30 dark:hover:border-violet-500 dark:hover:bg-violet-950/50">
                           <div className="flex items-center justify-center gap-2 font-semibold text-violet-700 dark:text-violet-400">
                             <Info size={16} />
-                            <span>ดูรายละเอียดเพิ่มเติม</span>
+                            <span>{d.detailText}</span>
                           </div>
                           <p className="mt-0.5 text-xs text-violet-500 dark:text-violet-500">
-                            ดูวิดีโอตัวอย่าง รูปภาพ และข้อมูลทั้งหมด
+                            {d.detailSub}
                           </p>
                         </div>
                       </Link>

@@ -8,19 +8,40 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sun, Moon, LogOut, LayoutDashboard, Shield, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+interface NavSettings {
+  brand?: string;
+  menu1?: string;
+  menu2?: string;
+  menu3?: string;
+  loginText?: string;
+  registerText?: string;
+}
+
 export function Navbar() {
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [nav, setNav] = useState<NavSettings>({});
 
   useEffect(() => {
     setMounted(true);
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
+    fetch("/api/site-settings")
+      .then((r) => r.json())
+      .then((d) => { if (d.navbar) setNav(d.navbar); })
+      .catch(() => {});
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const brand = nav.brand || "SoftwareShop";
+  const menu1 = nav.menu1 || "จุดเด่น";
+  const menu2 = nav.menu2 || "สินค้า";
+  const menu3 = nav.menu3 || "คำถาม";
+  const loginText = nav.loginText || "เข้าสู่ระบบ";
+  const registerText = nav.registerText || "สมัครเลย";
 
   return (
     <nav
@@ -33,19 +54,19 @@ export function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className={`text-xl font-bold ${scrolled ? "text-violet-700 dark:text-violet-400" : "text-white"}`}>
-            SoftwareShop
+            {brand}
           </Link>
 
           {/* Desktop Nav */}
           <div className="hidden items-center gap-6 md:flex">
             <Link href="/#features" className={`text-sm ${scrolled ? "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" : "text-slate-300 hover:text-white"}`}>
-              จุดเด่น
+              {menu1}
             </Link>
             <Link href="/#pricing" className={`text-sm ${scrolled ? "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" : "text-slate-300 hover:text-white"}`}>
-              สินค้า
+              {menu2}
             </Link>
             <Link href="/#faq" className={`text-sm ${scrolled ? "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" : "text-slate-300 hover:text-white"}`}>
-              คำถาม
+              {menu3}
             </Link>
 
             {mounted && (
@@ -78,10 +99,10 @@ export function Navbar() {
             ) : (
               <div className="flex items-center gap-2">
                 <Link href="/login">
-                  <Button variant="ghost" size="sm" className={scrolled ? "" : "text-slate-300 hover:bg-slate-800 hover:text-white"}>เข้าสู่ระบบ</Button>
+                  <Button variant="ghost" size="sm" className={scrolled ? "" : "text-slate-300 hover:bg-slate-800 hover:text-white"}>{loginText}</Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm" className="bg-violet-600 hover:bg-violet-700">สมัครเลย</Button>
+                  <Button size="sm" className="bg-violet-600 hover:bg-violet-700">{registerText}</Button>
                 </Link>
               </div>
             )}
@@ -109,13 +130,13 @@ export function Navbar() {
           >
             <div className="space-y-2 px-4 py-4">
               <Link href="/#features" onClick={() => setIsOpen(false)} className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
-                จุดเด่น
+                {menu1}
               </Link>
               <Link href="/#pricing" onClick={() => setIsOpen(false)} className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
-                สินค้า
+                {menu2}
               </Link>
               <Link href="/#faq" onClick={() => setIsOpen(false)} className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
-                คำถาม
+                {menu3}
               </Link>
               <hr className="border-slate-200 dark:border-slate-700" />
               {session ? (
@@ -138,10 +159,10 @@ export function Navbar() {
               ) : (
                 <>
                   <Link href="/login" onClick={() => setIsOpen(false)} className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
-                    เข้าสู่ระบบ
+                    {loginText}
                   </Link>
                   <Link href="/register" onClick={() => setIsOpen(false)}>
-                    <Button className="w-full bg-violet-600 hover:bg-violet-700" size="sm">สมัครเลย</Button>
+                    <Button className="w-full bg-violet-600 hover:bg-violet-700" size="sm">{registerText}</Button>
                   </Link>
                 </>
               )}

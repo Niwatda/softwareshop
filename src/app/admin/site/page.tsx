@@ -9,10 +9,12 @@ import { Save, Plus, Trash2, Upload } from "lucide-react";
 
 const tabs = [
   { key: "hero", label: "Hero" },
-  { key: "features", label: "Features" },
-  { key: "testimonials", label: "Testimonials" },
+  { key: "features", label: "จุดเด่น" },
+  { key: "pricing", label: "ราคา/สินค้า" },
+  { key: "testimonials", label: "รีวิว" },
   { key: "faq", label: "FAQ" },
   { key: "cta", label: "CTA" },
+  { key: "navbar", label: "Navbar" },
   { key: "footer", label: "Footer" },
   { key: "bank", label: "ธนาคาร" },
 ] as const;
@@ -71,6 +73,24 @@ const defaultValues: Record<TabKey, unknown> = {
     brand: "SoftwareShop",
     description: "โปรแกรมดีๆ ราคาเบาๆ ใช้ง่าย ได้ผลจริง",
     email: "support@softwareshop.com",
+  },
+  pricing: {
+    title: "ราคาเท่าไหร่?",
+    description: "จ่ายครั้งเดียว ใช้ได้ตลอด ไม่มีค่ารายเดือน",
+    buttonText: "ซื้อเลย",
+    popularBadge: "ขายดีสุด!",
+    perUnit: "/ จ่ายครั้งเดียว",
+    detailText: "ดูรายละเอียดเพิ่มเติม",
+    detailSub: "ดูวิดีโอตัวอย่าง รูปภาพ และข้อมูลทั้งหมด",
+    emptyText: "ยังไม่มีโปรแกรมวางขาย เร็วๆ นี้นะ!",
+  },
+  navbar: {
+    brand: "SoftwareShop",
+    menu1: "จุดเด่น",
+    menu2: "สินค้า",
+    menu3: "คำถาม",
+    loginText: "เข้าสู่ระบบ",
+    registerText: "สมัครเลย",
   },
   bank: {
     accountName: "",
@@ -371,13 +391,49 @@ export default function AdminSitePage() {
     );
   };
 
+  const renderPricing = () => {
+    const d = currentData as { title: string; description: string; buttonText: string; popularBadge: string; perUnit: string; detailText: string; detailSub: string; emptyText: string };
+    return (
+      <div className="space-y-4">
+        <Input label="หัวข้อ Section" value={d.title || ""} onChange={(e) => updateField("title", e.target.value)} />
+        <Input label="คำอธิบาย" value={d.description || ""} onChange={(e) => updateField("description", e.target.value)} />
+        <Input label="ข้อความปุ่มซื้อ" value={d.buttonText || ""} onChange={(e) => updateField("buttonText", e.target.value)} />
+        <Input label="Badge ขายดี" value={d.popularBadge || ""} onChange={(e) => updateField("popularBadge", e.target.value)} />
+        <Input label="ข้อความหลังราคา" value={d.perUnit || ""} onChange={(e) => updateField("perUnit", e.target.value)} />
+        <Input label="ข้อความปุ่มดูรายละเอียด" value={d.detailText || ""} onChange={(e) => updateField("detailText", e.target.value)} />
+        <Input label="ข้อความย่อยใต้ปุ่มรายละเอียด" value={d.detailSub || ""} onChange={(e) => updateField("detailSub", e.target.value)} />
+        <Input label="ข้อความเมื่อยังไม่มีสินค้า" value={d.emptyText || ""} onChange={(e) => updateField("emptyText", e.target.value)} />
+      </div>
+    );
+  };
+
+  const renderNavbar = () => {
+    const d = currentData as { brand: string; menu1: string; menu2: string; menu3: string; loginText: string; registerText: string };
+    return (
+      <div className="space-y-4">
+        <Input label="ชื่อแบรนด์ (โลโก้)" value={d.brand || ""} onChange={(e) => updateField("brand", e.target.value)} />
+        <div className="grid grid-cols-3 gap-4">
+          <Input label="เมนู 1" value={d.menu1 || ""} onChange={(e) => updateField("menu1", e.target.value)} />
+          <Input label="เมนู 2" value={d.menu2 || ""} onChange={(e) => updateField("menu2", e.target.value)} />
+          <Input label="เมนู 3" value={d.menu3 || ""} onChange={(e) => updateField("menu3", e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="ปุ่มเข้าสู่ระบบ" value={d.loginText || ""} onChange={(e) => updateField("loginText", e.target.value)} />
+          <Input label="ปุ่มสมัคร" value={d.registerText || ""} onChange={(e) => updateField("registerText", e.target.value)} />
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case "hero": return renderHero();
       case "features": return renderFeatures();
+      case "pricing": return renderPricing();
       case "testimonials": return renderTestimonials();
       case "faq": return renderFAQ();
       case "cta": return renderCTA();
+      case "navbar": return renderNavbar();
       case "footer": return renderFooter();
       case "bank": return renderBank();
     }

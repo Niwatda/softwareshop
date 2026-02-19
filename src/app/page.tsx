@@ -34,7 +34,7 @@ export default async function Home() {
         <Hero data={settings.hero as Record<string, unknown> | undefined} />
         <Features data={settings.features as Record<string, unknown> | undefined} />
         <Testimonials data={settings.testimonials as Record<string, unknown> | undefined} />
-        <Pricing />
+        <Pricing data={settings.pricing as Record<string, unknown> | undefined} />
         <FAQ data={settings.faq as Record<string, unknown> | undefined} />
         <CTA data={settings.cta as Record<string, unknown> | undefined} />
       </main>
