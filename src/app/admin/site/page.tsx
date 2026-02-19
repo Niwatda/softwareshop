@@ -75,14 +75,21 @@ const defaultValues: Record<TabKey, unknown> = {
     email: "support@softwareshop.com",
     col1Title: "โปรแกรม",
     col1Link1: "จุดเด่น",
+    col1Url1: "/#features",
     col1Link2: "ราคา",
+    col1Url2: "/#pricing",
     col1Link3: "คำถามที่ถามบ่อย",
+    col1Url3: "/#faq",
     col2Title: "ช่วยเหลือ",
     col2Link1: "หน้าหลักของฉัน",
+    col2Url1: "/dashboard",
     col2Link2: "ติดต่อเรา",
+    col2Url2: "",
     col3Title: "ข้อกำหนด",
     col3Link1: "นโยบายความเป็นส่วนตัว",
+    col3Url1: "/privacy",
     col3Link2: "เงื่อนไขการใช้งาน",
+    col3Url2: "/terms",
     copyright: "สงวนลิขสิทธิ์",
   },
   pricing: {
@@ -358,10 +365,17 @@ export default function AdminSitePage() {
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-500 uppercase">คอลัมน์ 1</h3>
           <Input label="หัวข้อ" value={d.col1Title || ""} onChange={(e) => updateField("col1Title", e.target.value)} />
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="ลิงก์ 1" value={d.col1Link1 || ""} onChange={(e) => updateField("col1Link1", e.target.value)} />
-            <Input label="ลิงก์ 2" value={d.col1Link2 || ""} onChange={(e) => updateField("col1Link2", e.target.value)} />
-            <Input label="ลิงก์ 3" value={d.col1Link3 || ""} onChange={(e) => updateField("col1Link3", e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="ชื่อลิงก์ 1" value={d.col1Link1 || ""} onChange={(e) => updateField("col1Link1", e.target.value)} />
+            <Input label="URL ลิงก์ 1" value={d.col1Url1 || ""} onChange={(e) => updateField("col1Url1", e.target.value)} placeholder="เช่น /#features" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="ชื่อลิงก์ 2" value={d.col1Link2 || ""} onChange={(e) => updateField("col1Link2", e.target.value)} />
+            <Input label="URL ลิงก์ 2" value={d.col1Url2 || ""} onChange={(e) => updateField("col1Url2", e.target.value)} placeholder="เช่น /#pricing" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="ชื่อลิงก์ 3" value={d.col1Link3 || ""} onChange={(e) => updateField("col1Link3", e.target.value)} />
+            <Input label="URL ลิงก์ 3" value={d.col1Url3 || ""} onChange={(e) => updateField("col1Url3", e.target.value)} placeholder="เช่น /#faq" />
           </div>
         </div>
         <hr className="border-gray-200 dark:border-gray-700" />
@@ -369,8 +383,12 @@ export default function AdminSitePage() {
           <h3 className="text-sm font-semibold text-gray-500 uppercase">คอลัมน์ 2</h3>
           <Input label="หัวข้อ" value={d.col2Title || ""} onChange={(e) => updateField("col2Title", e.target.value)} />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="ลิงก์ 1" value={d.col2Link1 || ""} onChange={(e) => updateField("col2Link1", e.target.value)} />
-            <Input label="ลิงก์ 2" value={d.col2Link2 || ""} onChange={(e) => updateField("col2Link2", e.target.value)} />
+            <Input label="ชื่อลิงก์ 1" value={d.col2Link1 || ""} onChange={(e) => updateField("col2Link1", e.target.value)} />
+            <Input label="URL ลิงก์ 1" value={d.col2Url1 || ""} onChange={(e) => updateField("col2Url1", e.target.value)} placeholder="เช่น /dashboard" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="ชื่อลิงก์ 2" value={d.col2Link2 || ""} onChange={(e) => updateField("col2Link2", e.target.value)} />
+            <Input label="URL ลิงก์ 2" value={d.col2Url2 || ""} onChange={(e) => updateField("col2Url2", e.target.value)} placeholder="เช่น mailto:email@x.com หรือ /contact" />
           </div>
         </div>
         <hr className="border-gray-200 dark:border-gray-700" />
@@ -378,8 +396,12 @@ export default function AdminSitePage() {
           <h3 className="text-sm font-semibold text-gray-500 uppercase">คอลัมน์ 3</h3>
           <Input label="หัวข้อ" value={d.col3Title || ""} onChange={(e) => updateField("col3Title", e.target.value)} />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="ลิงก์ 1" value={d.col3Link1 || ""} onChange={(e) => updateField("col3Link1", e.target.value)} />
-            <Input label="ลิงก์ 2" value={d.col3Link2 || ""} onChange={(e) => updateField("col3Link2", e.target.value)} />
+            <Input label="ชื่อลิงก์ 1" value={d.col3Link1 || ""} onChange={(e) => updateField("col3Link1", e.target.value)} />
+            <Input label="URL ลิงก์ 1" value={d.col3Url1 || ""} onChange={(e) => updateField("col3Url1", e.target.value)} placeholder="เช่น /privacy" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="ชื่อลิงก์ 2" value={d.col3Link2 || ""} onChange={(e) => updateField("col3Link2", e.target.value)} />
+            <Input label="URL ลิงก์ 2" value={d.col3Url2 || ""} onChange={(e) => updateField("col3Url2", e.target.value)} placeholder="เช่น /terms" />
           </div>
         </div>
         <hr className="border-gray-200 dark:border-gray-700" />
