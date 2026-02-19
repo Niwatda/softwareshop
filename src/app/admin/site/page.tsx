@@ -119,11 +119,19 @@ const defaultValues: Record<TabKey, unknown> = {
   },
 };
 
+interface PageItem {
+  id: string;
+  title: string;
+  slug: string;
+  isPublished: boolean;
+}
+
 export default function AdminSitePage() {
   const [activeTab, setActiveTab] = useState<TabKey>("hero");
   const [data, setData] = useState<Record<string, unknown>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [pages, setPages] = useState<PageItem[]>([]);
 
   useEffect(() => {
     fetch("/api/admin/site-settings")
@@ -135,6 +143,11 @@ export default function AdminSitePage() {
         }
         setData(merged);
       });
+
+    fetch("/api/admin/pages")
+      .then((res) => res.json())
+      .then((result) => setPages(result.pages || []))
+      .catch(() => {});
   }, []);
 
   const currentData = (data[activeTab] || defaultValues[activeTab]) as Record<string, unknown>;
@@ -344,6 +357,63 @@ export default function AdminSitePage() {
     );
   };
 
+  const builtInLinks = [
+    { label: "หน้าแรก", url: "/" },
+    { label: "จุดเด่น", url: "/#features" },
+    { label: "ราคา/สินค้า", url: "/#pricing" },
+    { label: "FAQ", url: "/#faq" },
+    { label: "Dashboard", url: "/dashboard" },
+    { label: "ดาวน์โหลด", url: "/dashboard/downloads" },
+  ];
+
+  const allLinkOptions = [
+    ...builtInLinks,
+    ...pages.map((p) => ({ label: `📄 ${p.title}${p.isPublished ? "" : " (ฉบับร่าง)"}`, url: `/p/${p.slug}` })),
+  ];
+
+  const renderLinkRow = (nameKey: string, urlKey: string, label: string, d: Record<string, string>) => (
+    <div className="grid grid-cols-2 gap-3">
+      <Input label={label} value={d[nameKey] || ""} onChange={(e) => updateField(nameKey, e.target.value)} />
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">URL ลิงก์</label>
+        <div className="flex gap-2">
+          <select
+            className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            value={d[urlKey] || ""}
+            onChange={(e) => updateField(urlKey, e.target.value)}
+          >
+            <option value="">-- เลือกหน้า --</option>
+            <optgroup label="หน้าในระบบ">
+              {builtInLinks.map((l) => (
+                <option key={l.url} value={l.url}>{l.label} ({l.url})</option>
+              ))}
+            </optgroup>
+            {pages.length > 0 && (
+              <optgroup label="หน้าที่สร้าง (Page Builder)">
+                {pages.map((p) => (
+                  <option key={p.id} value={`/p/${p.slug}`}>
+                    {p.title} (/p/{p.slug}){p.isPublished ? "" : " - ฉบับร่าง"}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label="อื่นๆ">
+              <option value="__custom__">พิมพ์ URL เอง...</option>
+            </optgroup>
+          </select>
+        </div>
+        {(d[urlKey] === "__custom__" || (d[urlKey] && !allLinkOptions.some((l) => l.url === d[urlKey]))) && (
+          <input
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            value={d[urlKey] === "__custom__" ? "" : d[urlKey] || ""}
+            onChange={(e) => updateField(urlKey, e.target.value)}
+            placeholder="พิมพ์ URL เช่น /contact หรือ https://..."
+          />
+        )}
+      </div>
+    </div>
+  );
+
   const renderFooter = () => {
     const d = currentData as Record<string, string>;
     return (
@@ -366,44 +436,23 @@ export default function AdminSitePage() {
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-500 uppercase">คอลัมน์ 1</h3>
           <Input label="หัวข้อ" value={d.col1Title || ""} onChange={(e) => updateField("col1Title", e.target.value)} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="ชื่อลิงก์ 1" value={d.col1Link1 || ""} onChange={(e) => updateField("col1Link1", e.target.value)} />
-            <Input label="URL ลิงก์ 1" value={d.col1Url1 || ""} onChange={(e) => updateField("col1Url1", e.target.value)} placeholder="เช่น /#features" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="ชื่อลิงก์ 2" value={d.col1Link2 || ""} onChange={(e) => updateField("col1Link2", e.target.value)} />
-            <Input label="URL ลิงก์ 2" value={d.col1Url2 || ""} onChange={(e) => updateField("col1Url2", e.target.value)} placeholder="เช่น /#pricing" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="ชื่อลิงก์ 3" value={d.col1Link3 || ""} onChange={(e) => updateField("col1Link3", e.target.value)} />
-            <Input label="URL ลิงก์ 3" value={d.col1Url3 || ""} onChange={(e) => updateField("col1Url3", e.target.value)} placeholder="เช่น /#faq" />
-          </div>
+          {renderLinkRow("col1Link1", "col1Url1", "ชื่อลิงก์ 1", d)}
+          {renderLinkRow("col1Link2", "col1Url2", "ชื่อลิงก์ 2", d)}
+          {renderLinkRow("col1Link3", "col1Url3", "ชื่อลิงก์ 3", d)}
         </div>
         <hr className="border-gray-200 dark:border-gray-700" />
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-500 uppercase">คอลัมน์ 2</h3>
           <Input label="หัวข้อ" value={d.col2Title || ""} onChange={(e) => updateField("col2Title", e.target.value)} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="ชื่อลิงก์ 1" value={d.col2Link1 || ""} onChange={(e) => updateField("col2Link1", e.target.value)} />
-            <Input label="URL ลิงก์ 1" value={d.col2Url1 || ""} onChange={(e) => updateField("col2Url1", e.target.value)} placeholder="เช่น /dashboard" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="ชื่อลิงก์ 2" value={d.col2Link2 || ""} onChange={(e) => updateField("col2Link2", e.target.value)} />
-            <Input label="URL ลิงก์ 2" value={d.col2Url2 || ""} onChange={(e) => updateField("col2Url2", e.target.value)} placeholder="เช่น mailto:email@x.com หรือ /contact" />
-          </div>
+          {renderLinkRow("col2Link1", "col2Url1", "ชื่อลิงก์ 1", d)}
+          {renderLinkRow("col2Link2", "col2Url2", "ชื่อลิงก์ 2", d)}
         </div>
         <hr className="border-gray-200 dark:border-gray-700" />
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-500 uppercase">คอลัมน์ 3</h3>
           <Input label="หัวข้อ" value={d.col3Title || ""} onChange={(e) => updateField("col3Title", e.target.value)} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="ชื่อลิงก์ 1" value={d.col3Link1 || ""} onChange={(e) => updateField("col3Link1", e.target.value)} />
-            <Input label="URL ลิงก์ 1" value={d.col3Url1 || ""} onChange={(e) => updateField("col3Url1", e.target.value)} placeholder="เช่น /privacy" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="ชื่อลิงก์ 2" value={d.col3Link2 || ""} onChange={(e) => updateField("col3Link2", e.target.value)} />
-            <Input label="URL ลิงก์ 2" value={d.col3Url2 || ""} onChange={(e) => updateField("col3Url2", e.target.value)} placeholder="เช่น /terms" />
-          </div>
+          {renderLinkRow("col3Link1", "col3Url1", "ชื่อลิงก์ 1", d)}
+          {renderLinkRow("col3Link2", "col3Url2", "ชื่อลิงก์ 2", d)}
         </div>
         <hr className="border-gray-200 dark:border-gray-700" />
         <div className="space-y-4">
