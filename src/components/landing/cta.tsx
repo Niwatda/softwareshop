@@ -35,7 +35,7 @@ export function CTA({ data }: CTAProps) {
           </p>
           <div className="relative mt-8">
             <Link href="/#pricing">
-              <Button size="lg" className="bg-white text-violet-700 hover:bg-slate-100 gap-2">
+              <Button size="lg" className="bg-yellow-400 text-slate-900 font-bold hover:bg-yellow-300 border-2 border-yellow-500 shadow-lg gap-2">
                 {d.button} <ArrowRight size={18} />
               </Button>
             </Link>
