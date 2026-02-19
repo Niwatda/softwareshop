@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
-import { LayoutDashboard, Package, PanelTop, ShoppingBag, Users } from "lucide-react";
+import { LayoutDashboard, Package, PanelTop, ShoppingBag, Users, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const adminLinks = [
@@ -14,6 +14,7 @@ const adminLinks = [
   { href: "/admin/orders", label: "คำสั่งซื้อ", icon: ShoppingBag },
   { href: "/admin/users", label: "สมาชิก", icon: Users },
   { href: "/admin/site", label: "จัดการหน้าเว็บ", icon: PanelTop },
+  { href: "/", label: "ดูหน้าเว็บ", icon: ExternalLink },
 ];
 
 export default function AdminLayout({
@@ -39,7 +40,8 @@ export default function AdminLayout({
   return (
     <>
       <Navbar />
-      <div className="flex min-h-screen pt-16">
+      <div className="flex min-h-screen flex-col pt-16 lg:flex-row">
+        {/* Sidebar - เดสก์ท็อป */}
         <aside className="hidden w-64 border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950 lg:block">
           <div className="p-4">
             <p className="text-xs font-semibold uppercase text-gray-400">หลังบ้าน</p>
@@ -63,7 +65,26 @@ export default function AdminLayout({
           </nav>
         </aside>
 
-        <main className="flex-1 p-6 lg:p-8">{children}</main>
+        {/* เมนูแถบบน - มือถือ */}
+        <div className="flex overflow-x-auto border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950 lg:hidden">
+          {adminLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "flex flex-shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-xs transition-colors",
+                pathname === link.href
+                  ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                  : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400"
+              )}
+            >
+              <link.icon size={14} />
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </>
   );
