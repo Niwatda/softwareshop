@@ -183,11 +183,7 @@ export function Pricing({ data }: PricingProps) {
 
                     <div className="mt-auto pt-8 space-y-3">
                       <Button
-                        className={cn(
-                          "w-full",
-                          isPopular ? "bg-violet-600 hover:bg-violet-700" : ""
-                        )}
-                        variant={isPopular ? "default" : "outline"}
+                        className="w-full bg-violet-600 text-white hover:bg-violet-700 dark:bg-violet-600 dark:hover:bg-violet-700"
                         size="lg"
                         isLoading={loading === product.slug}
                         onClick={() => handlePurchase(product.slug)}
@@ -195,14 +191,13 @@ export function Pricing({ data }: PricingProps) {
                         {d.buttonText}
                       </Button>
 
-                      {/* ปุ่มรายละเอียดเพิ่มเติม - เด่นชัด มีกรอบ */}
                       <Link href={`/products/${encodeURIComponent(product.slug)}`} className="block">
-                        <div className="rounded-xl border-2 border-dashed border-violet-300 bg-violet-50 p-3 text-center transition-all hover:border-violet-500 hover:bg-violet-100 dark:border-violet-700 dark:bg-violet-950/30 dark:hover:border-violet-500 dark:hover:bg-violet-950/50">
-                          <div className="flex items-center justify-center gap-2 font-semibold text-violet-700 dark:text-violet-400">
+                        <div className="rounded-xl border-2 border-violet-600 bg-violet-600 p-3 text-center transition-all hover:bg-violet-700 hover:border-violet-700 dark:border-violet-500 dark:bg-violet-600 dark:hover:bg-violet-700 dark:hover:border-violet-600">
+                          <div className="flex items-center justify-center gap-2 font-semibold text-white">
                             <Info size={16} />
                             <span>{d.detailText}</span>
                           </div>
-                          <p className="mt-0.5 text-xs text-violet-500 dark:text-violet-500">
+                          <p className="mt-0.5 text-xs text-violet-100">
                             {d.detailSub}
                           </p>
                         </div>
