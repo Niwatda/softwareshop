@@ -22,6 +22,7 @@ const defaults = {
   col3Link2: "เงื่อนไขการใช้งาน",
   col3Url2: "/terms",
   copyright: "สงวนลิขสิทธิ์",
+  copyrightYear: "",
 };
 
 interface FooterProps {
@@ -72,7 +73,7 @@ export function Footer({ data }: FooterProps) {
 
         <div className="mt-8 border-t border-slate-800 pt-8">
           <p className="text-center text-sm text-slate-500">
-            &copy; {new Date().getFullYear()} {d.brand} {d.copyright}
+            &copy; {d.copyrightYear || new Date().getFullYear()} {d.brand} {d.copyright}
           </p>
         </div>
       </div>

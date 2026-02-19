@@ -91,6 +91,7 @@ const defaultValues: Record<TabKey, unknown> = {
     col3Link2: "เงื่อนไขการใช้งาน",
     col3Url2: "/terms",
     copyright: "สงวนลิขสิทธิ์",
+    copyrightYear: "",
   },
   pricing: {
     title: "ราคาเท่าไหร่?",
@@ -407,7 +408,10 @@ export default function AdminSitePage() {
         <hr className="border-gray-200 dark:border-gray-700" />
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-500 uppercase">ด้านล่างสุด</h3>
-          <Input label="ข้อความสงวนลิขสิทธิ์" value={d.copyright || ""} onChange={(e) => updateField("copyright", e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="ปี ค.ศ. (เว้นว่างใช้ปีปัจจุบัน)" value={d.copyrightYear || ""} onChange={(e) => updateField("copyrightYear", e.target.value)} placeholder="เช่น 2026" />
+            <Input label="ข้อความสงวนลิขสิทธิ์" value={d.copyright || ""} onChange={(e) => updateField("copyright", e.target.value)} />
+          </div>
         </div>
       </div>
     );
