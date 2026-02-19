@@ -47,7 +47,7 @@ export default function CheckoutPage() {
     }
 
     Promise.all([
-      fetch(`/api/products/${slug}`).then((r) => r.json()),
+      fetch(`/api/products/${encodeURIComponent(slug)}`).then((r) => r.json()),
       fetch("/api/site-settings").then((r) => r.json()),
     ])
       .then(([productData, settings]) => {

@@ -20,7 +20,9 @@ export const resetPasswordSchema = z.object({
 
 export const productSchema = z.object({
   name: z.string().min(1, "ใส่ชื่อโปรแกรมด้วย"),
-  slug: z.string().min(1, "ใส่ slug ด้วย"),
+  slug: z.string().min(1, "ใส่ slug ด้วย").transform((v) =>
+    v.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || v
+  ),
   description: z.string().min(1, "ใส่คำอธิบายด้วยนะ"),
   longDescription: z.string().nullable().optional(),
   price: z.number().min(0, "ราคาต้องมากกว่า 0"),

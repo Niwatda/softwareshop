@@ -58,7 +58,7 @@ export default function ProductDetailPage() {
   const [showVideo, setShowVideo] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/products/${slug}`)
+    fetch(`/api/products/${encodeURIComponent(slug)}`)
       .then((r) => {
         if (!r.ok) throw new Error("Not found");
         return r.json();
@@ -73,7 +73,7 @@ export default function ProductDetailPage() {
       router.push("/login");
       return;
     }
-    router.push(`/checkout/${slug}`);
+    router.push(`/checkout/${encodeURIComponent(slug)}`);
   };
 
   // รวม media ทั้งหมด (รูป + วิดีโอ)

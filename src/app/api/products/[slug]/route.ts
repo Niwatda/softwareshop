@@ -4,8 +4,9 @@ import { db } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request, { params }: { params: { slug: string } }) {
+  const slug = decodeURIComponent(params.slug);
   const product = await db.product.findUnique({
-    where: { slug: params.slug, isActive: true },
+    where: { slug, isActive: true },
     select: {
       id: true,
       name: true,

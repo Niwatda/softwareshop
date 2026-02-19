@@ -64,7 +64,7 @@ export function Pricing({ data }: PricingProps) {
       return;
     }
 
-    router.push(`/checkout/${productSlug}`);
+    router.push(`/checkout/${encodeURIComponent(productSlug)}`);
   };
 
   const getPopularIndex = (total: number) => {
@@ -196,7 +196,7 @@ export function Pricing({ data }: PricingProps) {
                       </Button>
 
                       {/* ปุ่มรายละเอียดเพิ่มเติม - เด่นชัด มีกรอบ */}
-                      <Link href={`/products/${product.slug}`} className="block">
+                      <Link href={`/products/${encodeURIComponent(product.slug)}`} className="block">
                         <div className="rounded-xl border-2 border-dashed border-violet-300 bg-violet-50 p-3 text-center transition-all hover:border-violet-500 hover:bg-violet-100 dark:border-violet-700 dark:bg-violet-950/30 dark:hover:border-violet-500 dark:hover:bg-violet-950/50">
                           <div className="flex items-center justify-center gap-2 font-semibold text-violet-700 dark:text-violet-400">
                             <Info size={16} />

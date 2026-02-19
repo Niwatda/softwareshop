@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const settings = await db.siteSetting.findMany({
-      where: { key: { in: ["navbar", "footer"] } },
+      where: { key: { in: ["navbar", "footer", "bank"] } },
     });
 
     const result: Record<string, unknown> = {};
